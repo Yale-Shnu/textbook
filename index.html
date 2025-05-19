@@ -6,6 +6,7 @@
     <title>跨文档全文检索系统</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -343,6 +344,17 @@
                 display: none;
             }
         }
+
+        /* 新增的使用统计样式 */
+        .usage-stats {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: var(--dark-gray);
+            padding: 10px;
+            background-color: rgba(0,0,0,0.02);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -406,15 +418,92 @@
             </div>
         </div>
     </div>
- <footer style="text-align: center;">
+    <footer style="text-align: center;">
         <br>
         <img src="logo1.png" alt="版权图标" width="25" height="25"><br>
         <div>© 2025 手把手 · AI工具系列 | SHNUYL版权所有</div>
+        <div class="usage-stats" id="usageStats">
+            正在加载使用统计...
+        </div>
     </footer>
 
     <script>
         // 初始化PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+        // Google Sheets配置 - 请替换为你自己的信息
+        const SHEET_ID = '1g3To_Kv6Exp3wzvqCpMEAFCtmKg_dzYvudPxdODPfCw';
+        const API_KEY = 'AIzaSyBBca5h3KSgGQe1b-3kiGXl54D1_QM5rsw';
+        const SHEET_NAME = 'usageStats';
+
+        // 记录使用情况到Google Sheets
+        async function recordUsage(action) {
+            try {
+                const now = new Date().toISOString();
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A1:D1:append?valueInputOption=USER_ENTERED&key=${API_KEY}`;
+                
+                const response = await axios.post(url, {
+                    values: [[
+                        now, 
+                        action, 
+                        navigator.userAgent, 
+                        `${window.screen.width}x${window.screen.height}`
+                    ]]
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Usage recorded:', response);
+                return true;
+            } catch (error) {
+                console.error('Error recording usage:', error);
+                return false;
+            }
+        }
+
+        // 获取使用统计（简化版）
+        async function getUsageStats() {
+            try {
+                const response = await axios.get(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A:D?key=${API_KEY}`
+                );
+                
+                if (response.data.values && response.data.values.length > 1) {
+                    const totalRecords = response.data.values.length - 1; // 减去表头
+                    const searchCount = response.data.values.filter(row => row[1] === 'search_action').length;
+                    const indexCount = response.data.values.filter(row => row[1] === 'index_files').length;
+                    
+                    return {
+                        totalRecords,
+                        searchCount,
+                        indexCount,
+                        lastUpdate: response.data.values[response.data.values.length - 1][0]
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Error getting stats:', error);
+                return null;
+            }
+        }
+
+        // 更新统计显示
+        async function updateStatsDisplay() {
+            const stats = await getUsageStats();
+            const statsElement = document.getElementById('usageStats');
+            
+            if (stats) {
+                statsElement.innerHTML = `
+                    本工具已被使用 <strong>${stats.searchCount}</strong> 次搜索，
+                    <strong>${stats.indexCount}</strong> 次索引，
+                    总计 <strong>${stats.totalRecords}</strong> 次操作
+                `;
+            } else {
+                statsElement.textContent = "使用统计暂不可用";
+            }
+        }
 
         // DOM元素
         const fileInput = document.getElementById('fileInput');
@@ -434,6 +523,12 @@
         let documentIndex = [];
         let selectedFiles = [];
         let currentKeyword = '';
+
+        // 页面加载时记录访问并更新统计
+        window.addEventListener('load', async () => {
+            await recordUsage('page_view');
+            await updateStatsDisplay();
+        });
 
         // 文件选择处理
         fileInput.addEventListener('change', function() {
@@ -532,10 +627,14 @@
             searchInput.disabled = false;
             searchBtn.disabled = false;
             indexBtn.disabled = false;
+            
+            // 记录索引操作
+            await recordUsage('index_files');
+            await updateStatsDisplay();
         });
 
         // 执行搜索
-        searchBtn.addEventListener('click', function() {
+        searchBtn.addEventListener('click', async function() {
             currentKeyword = searchInput.value.trim().toLowerCase();
             if (!currentKeyword) return;
             
@@ -556,6 +655,10 @@
             
             // 显示结果区域
             resultsSection.style.display = 'block';
+            
+            // 记录搜索操作
+            await recordUsage('search_action');
+            await updateStatsDisplay();
         });
 
         // 显示结果
