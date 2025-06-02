@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>跨文档全文检索系统</title>
+    <title>跨文档全文检索</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -348,7 +348,7 @@
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-search"></i> 跨文档全文检索系统V1.1</h1>
+            <h1><i class="fas fa-search"></i> 跨文档全文检索工具V1.1</h1>
             <p class="subtitle">支持 DOCX, TXT, PDF 格式文档检索</p>
         </header>
 
@@ -406,13 +406,24 @@
             </div>
         </div>
     </div>
+
  <footer style="text-align: center;">
         <br>
-        <img src="logo1.png" alt="版权图标" width="25" height="25"><br>
+        <img src="data:image/png;base64,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" alt="版权图标" width="25" height="25"><br>
         <div>© 2025 手把手 · AI工具系列 | SHNUYL版权所有</div>
+<div style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9rem;">
+    本页面已被访问 <span id="visitCount">0</span> 次
+</div>
     </footer>
 
     <script>
+// 访问次数统计
+document.addEventListener('DOMContentLoaded', function() {
+    let visitCount = localStorage.getItem('visitCount') || 0;
+    visitCount = parseInt(visitCount) + 1;
+    localStorage.setItem('visitCount', visitCount);
+    document.getElementById('visitCount').textContent = visitCount;
+});
         // 初始化PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
